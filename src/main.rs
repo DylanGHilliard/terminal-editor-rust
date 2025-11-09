@@ -7,7 +7,7 @@ use crossterm::{
     };
 
 use crossterm::style::{Attribute, Print, SetAttribute};
-
+use std::env;
 
 
 
@@ -139,8 +139,16 @@ impl Editor {
 
 
 fn main() -> io::Result<()> {
+    let args: Vec<String> = env::args().collect();
     let mut editor = Editor::new();
-    editor.open("textfiles/test.txt")?; 
+    if args.len() > 1 {
+        editor.open(&args[1])?;
+    }
+    else{
+        editor.open("textfiles/test.txt")?; 
+    }
+
+
     
     let mut stdout = stdout();
     enable_raw_mode()?;
@@ -155,7 +163,7 @@ fn main() -> io::Result<()> {
 
         match read()? {
             Event::Key(KeyEvent {code, modifiers, kind: _, state: _}) => match (code, modifiers) {
-                (KeyCode::Char('q'), KeyModifiers::CONTROL) => {editor.save();break},
+                (KeyCode::Char('q'), KeyModifiers::CONTROL) => {editor.save(); break},
                 (KeyCode::Left, _) => editor.move_left(),
                 (KeyCode::Right, _) => editor.move_right(),
                 (KeyCode::Up, _) => editor.move_up(),
