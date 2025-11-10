@@ -15,8 +15,6 @@ struct Editor {
     buffer: Vec<String>,
     cursor_x: usize,
     cursor_y: usize,
-    offset_x: usize,
-    offset_y: usize,
     filename : Option<String>,
 }
 
@@ -168,11 +166,11 @@ fn main() -> io::Result<()> {
                 (KeyCode::Right, _) => editor.move_right(),
                 (KeyCode::Up, _) => editor.move_up(),
                 (KeyCode::Down, _) => editor.move_down(),
-                (KeyCode::Char(c), _) if c.is_alphabetic() => editor.insert_char(c),
+                 
                 (KeyCode::Backspace, _) => editor.delete_char(),
                 (KeyCode::Char('s'), KeyModifiers::CONTROL) => editor.save()?,
                 (KeyCode::Enter, _) => editor.insert_newline(),
-                    
+                (KeyCode::Char(c), _) => { editor.insert_char(c) },    
                 _  => {}
             },
              _ => {}
