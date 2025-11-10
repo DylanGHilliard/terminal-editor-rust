@@ -24,8 +24,6 @@ impl Editor {
             buffer: vec![String::new()],
             cursor_x: 0,
             cursor_y: 0,
-            offset_x: 0,
-            offset_y: 0,
             filename: None,
         }
     }
