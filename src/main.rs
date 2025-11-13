@@ -15,6 +15,10 @@ struct Editor {
     buffer: Vec<String>,
     cursor_x: usize,
     cursor_y: usize,
+    offset_x: usize,
+    offset_y: usize,
+    terminal_width: usize,
+    terminal_height: usize,
     filename : Option<String>,
 }
 
@@ -24,6 +28,10 @@ impl Editor {
             buffer: vec![String::new()],
             cursor_x: 0,
             cursor_y: 0,
+            offset_x: 0,
+            offset_y: 0,
+            terminal_height: terminal::size().unwrap().1 as usize,
+            terminal_width: terminal::size().unwrap().0 as usize,
             filename: None,
         }
     }
@@ -86,32 +94,48 @@ impl Editor {
 
      fn move_left(&mut self) {
         if self.cursor_x > 0 { self.cursor_x -= 1; }
+        else if self.offset_x > 0 {
+            self.offset_x -= 1;
+        }
         else if self.cursor_y > 0 {
         self.cursor_y -= 1;
-        self.cursor_x = self.buffer[self.cursor_y].len();
+        self.offset_x = self.buffer[self.cursor_y].len().saturating_sub(self.terminal_width);
+        self.cursor_x = self.terminal_width.min(self.buffer[self.cursor_y].len());
         }
     }
 
     fn move_right(&mut self) {
-        if self.cursor_y >= self.buffer.len() { return; }
 
-        if self.cursor_x < self.buffer[self.cursor_y].len() { self.cursor_x += 1; }
+        if self.cursor_x + self.offset_x < self.buffer[self.cursor_y].len() {
+            if self.cursor_x < self.terminal_width - 1 {
+                self.cursor_x += 1;
+            }
+            else  {
+                self.offset_x += 1;
+            }
+        }
 
         else if self.cursor_y + 1 < self.buffer.len() {
             self.cursor_y += 1;
             self.cursor_x = 0;
+            self.offset_x = 0;
         }
     }
     fn move_up(&mut self) {
         if self.cursor_y > 0 {
+        
             self.cursor_y -= 1;
             self.cursor_x = self.cursor_x.min(self.buffer[self.cursor_y].len());
         }
     }
 
     fn move_down(&mut self) {
-        if self.cursor_y + 1 < self.buffer.len() {
+        if self.cursor_y + 1 < self.terminal_height && self.cursor_y + 1 < self.buffer.len() {
             self.cursor_y += 1;
+            self.cursor_x = self.cursor_x.min(self.buffer[self.cursor_y].len());
+        }
+        else  if self.cursor_y + self.offset_y + 1 < self.buffer.len() {
+            self.offset_y += 1;
             self.cursor_x = self.cursor_x.min(self.buffer[self.cursor_y].len());
         }
     }
@@ -120,12 +144,21 @@ impl Editor {
         // Clear the terminal before drawing to avoid appending/staggering
         stdout.queue(terminal::Clear(terminal::ClearType::All))?;
 
-        // Draw each line at column 0 explicitly so wrapped/long lines don't shift subsequent lines
-        for (i, line) in self.buffer.iter().enumerate() {
-            stdout.queue(cursor::MoveTo(0, i as u16))?;
-            stdout.queue(Print(line))?;
+        for (i, line) in self.buffer.iter().enumerate().skip(self.offset_y).take(self.terminal_height) {
+
+
+             let display_line =  if line.len() > self.terminal_width {
+                &line[self.offset_x..self.terminal_width + self.offset_x - 1]
+            }
+            else if line.len() > self.offset_x
+                {&line[self.offset_x..]}
+            else { "" };
+
+            stdout.queue(cursor::MoveTo(0, (i - self.offset_y) as u16))?;
+            stdout.queue(Print(display_line))?;
         }
-        
+
+
         stdout.flush()?;
         Ok(())
     }
@@ -159,16 +192,15 @@ fn main() -> io::Result<()> {
 
         match read()? {
             Event::Key(KeyEvent {code, modifiers, kind: _, state: _}) => match (code, modifiers) {
-                (KeyCode::Char('q'), KeyModifiers::CONTROL) => {editor.save(); break},
+                (KeyCode::Char('q'), KeyModifiers::CONTROL) => {break},
                 (KeyCode::Left, _) => editor.move_left(),
                 (KeyCode::Right, _) => editor.move_right(),
                 (KeyCode::Up, _) => editor.move_up(),
                 (KeyCode::Down, _) => editor.move_down(),
-                 
                 (KeyCode::Backspace, _) => editor.delete_char(),
                 (KeyCode::Char('s'), KeyModifiers::CONTROL) => editor.save()?,
+                (KeyCode::Char(c), _)  => editor.insert_char(c),
                 (KeyCode::Enter, _) => editor.insert_newline(),
-                (KeyCode::Char(c), _) => { editor.insert_char(c) },    
                 _  => {}
             },
              _ => {}
