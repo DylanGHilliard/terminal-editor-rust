@@ -57,38 +57,53 @@ impl Editor {
         if self.cursor_y >= self.buffer.len()    { return; }
 
         
-        if self.cursor_x > 0 {
-            let line = &mut self.buffer[self.cursor_y];
-            line.remove(self.cursor_x - 1);
+        if self.cursor_x + self.offset_x > 0 {
+            let line = &mut self.buffer[self.cursor_y + self.offset_y];
+            line.remove(self.cursor_x - 1 + self.offset_x);
             self.cursor_x -= 1;
-        } else if self.cursor_y > 0 {
-            let prev_line_len: usize =  self.buffer[self.cursor_y - 1].len();
-            let current_line = self.buffer[self.cursor_y].clone();
-            self.buffer.remove(self.cursor_y);
-            self.cursor_y -= 1;
+        } else if self.cursor_y + self.offset_y > 0 {
+            let prev_line_len: usize =  self.buffer[self.cursor_y + self.offset_y - 1].len();
+            let current_line = self.buffer[self.cursor_y + self.offset_y].clone();
+            self.buffer.remove(self.cursor_y + self.offset_y);
+            if self.cursor_y > 0 {
+                self.cursor_y -= 1;
+            } else {
+                self.offset_y -= 1;
+            }
             self.cursor_x = prev_line_len;
-            self.buffer[self.cursor_y].push_str(&current_line);
+            self.buffer[self.cursor_y + self.offset_y].push_str(&current_line);
         }
     }
 
     fn insert_newline(&mut self) {
-        if self.cursor_y >= self.buffer.len() { return; }
-        let line = &mut self.buffer[self.cursor_y];
-        let new_line = line.split_off(self.cursor_x);
-        self.buffer.insert(self.cursor_y + 1, new_line);
-        self.cursor_y += 1;
+        if self.cursor_y + self.offset_y >= self.buffer.len() { return; }
+        let line = &mut self.buffer[self.cursor_y + self.offset_y];
+        let new_line = line.split_off(self.cursor_x + self.offset_x);
+        self.buffer.insert(self.cursor_y + self.offset_y + 1, new_line);
+        if(self.cursor_y < self.terminal_height -1){
+            self.cursor_y += 1;
+        }
+        else{
+            self.offset_y += 1;
+        }
+
         self.cursor_x = 0;
     }
 
 
 
     fn insert_char(&mut self, c: char) {
-        if self.cursor_y >= self.buffer.len() {
+        if self.cursor_y + self.offset_y >= self.buffer.len() {
             self.buffer.push(String::new());
         }
-        let line = &mut self.buffer[self.cursor_y];
-        line.insert(self.cursor_x, c);
-        self.cursor_x += 1;
+        let line = &mut self.buffer[self.cursor_y + self.offset_y];
+        line.insert(self.cursor_x + self.offset_x, c);
+        if self.cursor_x < self.terminal_width - 1 {
+            self.cursor_x += 1;
+        } else {
+            self.offset_x += 1;
+        }
+        
     }
 
 
@@ -125,18 +140,22 @@ impl Editor {
         if self.cursor_y > 0 {
         
             self.cursor_y -= 1;
-            self.cursor_x = self.cursor_x.min(self.buffer[self.cursor_y].len());
+            self.cursor_x = self.cursor_x.min(self.buffer[self.cursor_y + self.offset_y].len());
+        }
+        else if self.offset_y > 0 {
+            self.offset_y -= 1;
+            self.cursor_x = self.cursor_x.min(self.buffer[self.cursor_y + self.offset_y].len());
         }
     }
 
     fn move_down(&mut self) {
         if self.cursor_y + 1 < self.terminal_height && self.cursor_y + 1 < self.buffer.len() {
             self.cursor_y += 1;
-            self.cursor_x = self.cursor_x.min(self.buffer[self.cursor_y].len());
+            self.cursor_x = self.cursor_x.min(self.buffer[self.cursor_y+self.offset_y].len());
         }
         else  if self.cursor_y + self.offset_y + 1 < self.buffer.len() {
             self.offset_y += 1;
-            self.cursor_x = self.cursor_x.min(self.buffer[self.cursor_y].len());
+            self.cursor_x = self.cursor_x.min(self.buffer[self.cursor_y + self.offset_y].len());
         }
     }
 
@@ -145,7 +164,6 @@ impl Editor {
         stdout.queue(terminal::Clear(terminal::ClearType::All))?;
 
         for (i, line) in self.buffer.iter().enumerate().skip(self.offset_y).take(self.terminal_height) {
-
 
              let display_line =  if line.len() > self.terminal_width {
                 &line[self.offset_x..self.terminal_width + self.offset_x - 1]
