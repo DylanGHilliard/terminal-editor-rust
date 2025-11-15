@@ -2,8 +2,9 @@ use std::io::{self, Write, stdout, BufRead, BufReader};
 use std::fs::File;
 use crossterm::{
         ExecutableCommand, QueueableCommand, cursor, event, execute, terminal,
-        event::{read, Event, KeyCode, KeyEvent, KeyModifiers},
+        event::{read, Event, KeyCode, KeyEvent, KeyModifiers, MouseButton, MouseEventKind,},
         terminal::{disable_raw_mode, enable_raw_mode},
+    
     };
 
 use crossterm::style::{Attribute, Print, SetAttribute};
@@ -220,6 +221,20 @@ fn main() -> io::Result<()> {
                 (KeyCode::Char(c), _)  => editor.insert_char(c),
                 (KeyCode::Enter, _) => editor.insert_newline(),
                 _  => {}
+            },
+                Event::Mouse(mouse_event)=>  {
+                match mouse_event.kind {
+                    event::MouseEventKind::Down(MouseButton::Left) => {
+                        editor.cursor_x = mouse_event.column as usize;
+                        editor.cursor_y = mouse_event.row as usize;
+                        editor.cursor_y = editor.cursor_y.min(editor.buffer.len() - 1);
+                        editor.cursor_x = editor.cursor_x.min(editor.buffer[editor.cursor_y].len());
+                        
+                    },
+                    event::MouseEventKind::ScrollDown => editor.move_down(),
+                    event::MouseEventKind::ScrollUp => editor.move_up(),
+                    _ => {}
+                }
             },
              _ => {}
         }
