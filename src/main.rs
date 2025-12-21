@@ -9,7 +9,8 @@ use crossterm::{
 
 use crossterm::style::{Attribute, Print, SetAttribute};
 use std::env;
-
+mod buffer;
+mod editor;
 
 
 struct Editor {
@@ -78,10 +79,12 @@ impl Editor {
 
     fn insert_newline(&mut self) {
         if self.cursor_y + self.offset_y >= self.buffer.len() { return; }
+
         let line = &mut self.buffer[self.cursor_y + self.offset_y];
         let new_line = line.split_off(self.cursor_x + self.offset_x);
         self.buffer.insert(self.cursor_y + self.offset_y + 1, new_line);
-        if(self.cursor_y < self.terminal_height -1){
+
+        if self.cursor_y < self.terminal_height -1 {
             self.cursor_y += 1;
         }
         else{
