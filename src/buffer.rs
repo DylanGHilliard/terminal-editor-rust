@@ -1,7 +1,7 @@
 
 pub struct Buffer {
-    data : Vec<String>,
-    file_path : String,
+    pub data : Vec<String>,
+    pub file_path : String,
 
 }
 
