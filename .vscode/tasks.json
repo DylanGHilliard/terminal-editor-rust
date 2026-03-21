@@ -1,0 +1,47 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Build Terminal Editor",
+			"type": "shell",
+			"command": "cd /home/dylan/Documents/Projects/Rust/terminal-editor-rust && cargo build",
+			"group": "build"
+		},
+		{
+			"label": "Build Terminal Editor",
+			"type": "shell",
+			"command": "cd /home/dylan/Documents/Projects/Rust/terminal-editor-rust && cargo build 2>&1 | tail -10",
+			"group": "build"
+		},
+		{
+			"label": "Build Terminal Editor",
+			"type": "shell",
+			"command": "cd /home/dylan/Documents/Projects/Rust/terminal-editor-rust && cargo build 2>&1 | grep -E 'error|warning|Finished'",
+			"group": "build"
+		},
+		{
+			"label": "Build Terminal Editor",
+			"type": "shell",
+			"command": "cd /home/dylan/Documents/Projects/Rust/terminal-editor-rust && cargo build 2>&1 | grep -E 'error|warning|Finished'",
+			"group": "build"
+		},
+		{
+			"label": "Build Terminal Editor",
+			"type": "shell",
+			"command": "cd /home/dylan/Documents/Projects/Rust/terminal-editor-rust && cargo build 2>&1 | grep -E 'error|warning: |Finished'",
+			"group": "build"
+		},
+		{
+			"label": "Build Terminal Editor",
+			"type": "shell",
+			"command": "cd /home/dylan/Documents/Projects/Rust/terminal-editor-rust && cargo build 2>&1 | grep -E 'error|warning: |Finished'",
+			"group": "build"
+		},
+		{
+			"label": "Build Terminal Editor",
+			"type": "shell",
+			"command": "cd /home/dylan/Documents/Projects/Rust/terminal-editor-rust && cargo build 2>&1 | tail -5",
+			"group": "build"
+		}
+	]
+}
