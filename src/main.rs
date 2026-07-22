@@ -1,10 +1,12 @@
+use std::error::Error;
 
-mod buffer;
-mod editor;
-mod viewport;
-mod terminal;
+use terminal_editor_rust::editor::Editor;
 
-fn main() {
-    let mut editor = editor::Editor::new();
-    editor.main_loop();
+fn main() -> Result<(), Box<dyn Error>> {
+    let mut editor = Editor::new()?;
+    if let Some(path) = std::env::args_os().nth(1) {
+        editor.open_file(path)?;
+    }
+    editor.run()?;
+    Ok(())
 }
